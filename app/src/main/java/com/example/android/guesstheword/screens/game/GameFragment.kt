@@ -17,11 +17,15 @@
 package com.example.android.guesstheword.screens.game
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProviders
+import androidx.navigation.fragment.NavHostFragment
 import com.example.android.guesstheword.R
 import com.example.android.guesstheword.databinding.GameFragmentBinding
 
@@ -44,6 +48,9 @@ class GameFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
 
+        Log.i("GameFragment", "Called ViewModelProviders.of")
+        viewModel = ViewModelProviders.of(this).get(GameViewModel::class.java)
+
         // Inflate view and obtain an instance of the binding class
         binding = DataBindingUtil.inflate(
                 inflater,
@@ -55,11 +62,13 @@ class GameFragment : Fragment() {
         resetList()
         nextWord()
 
+        binding.endGameButton.setOnClickListener { onEndGame() }
         binding.correctButton.setOnClickListener { onCorrect() }
         binding.skipButton.setOnClickListener { onSkip() }
         updateScoreText()
         updateWordText()
         return binding.root
+
 
     }
 
@@ -96,14 +105,17 @@ class GameFragment : Fragment() {
     /** Methods for buttons presses **/
 
     private fun onSkip() {
-        score--
-        nextWord()
+        viewModel.onSkip()
+        updateWordText()
+        updateScoreText()
     }
 
     private fun onCorrect() {
-        score++
-        nextWord()
+        viewModel.onCorrect()
+        updateScoreText()
+        updateWordText()
     }
+
 
     /**
      * Moves to the next word in the list
@@ -120,11 +132,27 @@ class GameFragment : Fragment() {
 
     /** Methods for updating the UI **/
 
+    /** Methods for updating the UI **/
+
     private fun updateWordText() {
-        binding.wordText.text = word
+        binding.wordText.text = viewModel.word
     }
 
     private fun updateScoreText() {
-        binding.scoreText.text = score.toString()
+        binding.scoreText.text = viewModel.score.toString()
+    }
+
+    private lateinit var viewModel: GameViewModel
+
+    private fun onEndGame() {
+        gameFinished()
+    }
+
+    private fun gameFinished() {
+        Toast.makeText(activity, "Game has just finished", Toast.LENGTH_SHORT).show()
+        val action = GameFragmentDirections.actionGameToScore()
+        action.score = viewModel.score
+        NavHostFragment.findNavController(this).navigate(action)
     }
 }
+
